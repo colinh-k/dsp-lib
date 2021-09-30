@@ -1,11 +1,12 @@
 CC=gcc
-CFLAGS=-Wall -std=c99 -pedantic -Wextra -Wtype-limits
+CFLAGS=-Wall -std=c18
+# -pedantic -Wextra -Wtype-limits
 
 SRCDIR=src
 OBJDIR=obj
 BINDIR=bin
 # final executable.
-EXE=$(BINDIR)/ctex
+EXE=$(BINDIR)/main
 
 # lists of .c, .h source and .o object files
 SRCS=$(wildcard $(SRCDIR)/*.c)
@@ -33,6 +34,16 @@ clean:
 
 run:
 	$(EXE) $(file)
+
+# run executable with lldb or valgrind, whichever exists
+debug:
+	if command -v lldb &> /dev/null; then \
+		lldb $(EXE); \
+	elif [ command -v valgrind &> /dev/null ]; then \
+		valgrind $(EXE); \
+	else \
+		echo "No debugger found"; \
+	fi
 
 $(OBJDIR) $(BINDIR):
 	mkdir -p $@
