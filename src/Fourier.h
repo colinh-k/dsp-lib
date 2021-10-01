@@ -33,4 +33,6 @@ void FD_Signal_Polar_To_Rect(FD_Signal_Polar *fd_polar, FD_Signal_Rect *fd_rect)
 // 
 void Unwrap_Phase(FD_Signal_Polar *fd_polar);
 
+void FD_RectToWaveform(FD_Signal_Rect *fd_rect, Signal **re_waves, Signal **im_waves);
+
 #endif  // FOURIER_H_

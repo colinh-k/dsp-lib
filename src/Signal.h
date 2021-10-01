@@ -10,6 +10,8 @@ typedef double Sample;
 
 typedef struct {
   size_t size;  // the size of the samples array
+  // the rate at which the samples were taken
+  uint32_t sample_rate;
   Sample *samples;  // the array of samples defining the signal
 } Signal;
 

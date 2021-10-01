@@ -1,8 +1,10 @@
 #include "Signal.h"
 #include "Fourier.h"
+#include "SignalGenerator.h"
+
 #include <math.h>
 #include <memory.h>
-// #include <stdio.h>
+#include <stdio.h>
 
 // NOTE: trig functions are calculated by C in radians.
 
@@ -21,9 +23,11 @@ void DFT_Correlation(Signal *s_in, FD_Signal_Rect *fd_sig) {
   memset(fd_sig->img->samples, 0, fd_sig->size * sizeof(Sample));
 
   for (int32_t i = 0; i < fd_sig->size; i++) {
-    for (int32_t j = 0; j < fd_sig->size; j++) {
-      fd_sig->real->samples[i] += s_in->samples[j] * cos(2 * M_PI * i * j / s_in->size);
-      fd_sig->img->samples[i] += s_in->samples[j] * sin(2 * M_PI * i * j / s_in->size);
+    for (int32_t j = 0; j < s_in->size; j++) {
+      fd_sig->real->samples[i] += s_in->samples[j] * cos(2 * M_PI * i * j / s_in->size) * 2;
+      // printf("real: %lf\n", fd_sig->real->samples[i]);
+      fd_sig->img->samples[i] -= s_in->samples[j] * sin(2 * M_PI * i * j / s_in->size);
+      // printf("imag: %lf\n", fd_sig->img->samples[i]);
     }
   }
 }
@@ -36,8 +40,8 @@ void DFT_Correlation_Inverse(FD_Signal_Rect *fd_rect, Signal *s_out) {
   s_out->size = fd_rect->size * 2 - 2;
 
   for (uint32_t i = 0; i < fd_rect->size; i++) {
-    fd_rect->real->samples[i] /= s_out->size / 2;  // == <...> - 1
-    fd_rect->img->samples[i] /= - s_out->size / 2;
+    fd_rect->real->samples[i] /= (s_out->size / 2);
+    fd_rect->img->samples[i] /= - (s_out->size / 2);
   }
 
   // correct the first and last real signal components
@@ -65,12 +69,12 @@ void FD_Signal_Rect_To_Polar(FD_Signal_Rect *fd_rect, FD_Signal_Polar *fd_polar)
     //  sample is 0, but the imaginary sample is not. this indicates
     //  a cooresponding phase value of +-90 degrees exactly.
     if (fd_rect->real->samples[i] == 0) {
-      if (fd_rect->img->samples[i] > 0) {
-        fd_polar->phase->samples[i] = M_PI / 2;
-      } else if (fd_rect->img->samples[i] < 0) {
-        fd_polar->phase->samples[i] = - M_PI / 2;
-      }
-      // fd_rect->real->samples[i] = 1e-20;
+      // if (fd_rect->img->samples[i] > 0) {
+      //   fd_polar->phase->samples[i] = M_PI / 2;
+      // } else if (fd_rect->img->samples[i] < 0) {
+      //   fd_polar->phase->samples[i] = - M_PI / 2;
+      // }
+      fd_rect->real->samples[i] = 1e-20;
     }
 
     fd_polar->phase->samples[i] = atan(fd_rect->img->samples[i] / fd_rect->real->samples[i]);
@@ -93,8 +97,26 @@ void FD_Signal_Polar_To_Rect(FD_Signal_Polar *fd_polar, FD_Signal_Rect *fd_rect)
 
 void Unwrap_Phase(FD_Signal_Polar *fd_polar) {
   Signal *phase = fd_polar->phase;
-  // the first sample is 0, both for the original and unwrapped signal
+  // the first sample is 0, both for the original and unwrapped signals
   for (int32_t i = 1; i < fd_polar->size; i++) {
-    int32_t factor = roundtol((phase->samples[i] - phase->samples[i]) / (2 * M_PI));
+    int32_t factor = lround((phase->samples[i] - phase->samples[i]) / (2 * M_PI));
+  }
+}
+
+// converts the given frequency domain components (rectangular) to
+//  their signal/waveform representations, i.e., the real part
+//  is converted to cosine waves, and the imaginary part
+//  is converted to sine waves
+// returns an array of pointers to allocated signals for
+//  cos and sin through the output params
+void FD_RectToWaveform(FD_Signal_Rect *fd_rect, Signal **re_waves, Signal **im_waves) {
+  // allocate space for the output arrays
+  *re_waves = malloc(fd_rect->size * sizeof(Signal));
+  *im_waves = malloc(fd_rect->size * sizeof(Signal));
+
+  for (uint32_t i = 0; i < fd_rect->size; i++) {
+    // Signal *re_wave = Signal_Create(fd_rect->size * 2 - 2);
+    re_waves[i] = SigGen_Cos(fd_rect->size * 2 - 2, i, fd_rect->real->samples[i], 0, fd_rect->size);
+    im_waves[i] = SigGen_Sin(fd_rect->size * 2 - 2, i, fd_rect->real->samples[i], 0, fd_rect->size);
   }
 }

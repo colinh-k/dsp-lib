@@ -35,12 +35,17 @@ clean:
 run:
 	$(EXE) $(file)
 
-# run executable with lldb or valgrind, whichever exists
+# plot a signal stored in the given signal files. wrap
+#  the list of files in double quotes: files="<file1> <file2> ..."
+plot:
+	python3 plot.py $(files)
+
+# run executable with lldb or gdb, whichever exists
 debug:
 	if command -v lldb &> /dev/null; then \
 		lldb $(EXE); \
-	elif [ command -v valgrind &> /dev/null ]; then \
-		valgrind $(EXE); \
+	elif [ command -v gdb &> /dev/null ]; then \
+		gdb $(EXE); \
 	else \
 		echo "No debugger found"; \
 	fi
