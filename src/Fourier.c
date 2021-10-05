@@ -12,7 +12,7 @@
 //  returns the real and imaginary signals through the output parameter.
 void DFT_Correlation(Signal *s_in, FD_Signal_Rect *fd_sig) {
   // size of frequency domain signals
-  fd_sig->size = s_in->size / 2 + 1;
+  fd_sig->size = s_in->size / 2.0 + 1.0;
 
   // TODO: error checking:
   fd_sig->real = Signal_Create(fd_sig->size);
@@ -24,9 +24,9 @@ void DFT_Correlation(Signal *s_in, FD_Signal_Rect *fd_sig) {
 
   for (int32_t i = 0; i < fd_sig->size; i++) {
     for (int32_t j = 0; j < s_in->size; j++) {
-      fd_sig->real->samples[i] += s_in->samples[j] * cos(2 * M_PI * i * j / s_in->size) * 2;
+      fd_sig->real->samples[i] += s_in->samples[j] * cos(2 * M_PI * (double) i * (double) j / s_in->size);
       // printf("real: %lf\n", fd_sig->real->samples[i]);
-      fd_sig->img->samples[i] -= s_in->samples[j] * sin(2 * M_PI * i * j / s_in->size);
+      fd_sig->img->samples[i] -= s_in->samples[j] * sin(2 * M_PI * (double) i * (double) j / s_in->size);
       // printf("imag: %lf\n", fd_sig->img->samples[i]);
     }
   }
@@ -37,28 +37,33 @@ void DFT_Correlation(Signal *s_in, FD_Signal_Rect *fd_sig) {
 //  signal through the output parameter. this algorithm is slow (?)
 void DFT_Correlation_Inverse(FD_Signal_Rect *fd_rect, Signal *s_out) {
   // set the size of the original signal
-  s_out->size = fd_rect->size * 2 - 2;
+  s_out->size = fd_rect->size * 2.0 - 2.0;
 
   for (uint32_t i = 0; i < fd_rect->size; i++) {
-    fd_rect->real->samples[i] /= (s_out->size / 2);
-    fd_rect->img->samples[i] /= - (s_out->size / 2);
+    fd_rect->real->samples[i] /= (s_out->size / 2.0);
+    fd_rect->img->samples[i] /= - (s_out->size / 2.0);
   }
 
   // correct the first and last real signal components
   // TODO: account for there being no samples in the real signal at idx 0:
-  fd_rect->real->samples[0] /= 2;
-  fd_rect->real->samples[fd_rect->real->size - 1] /= 2;
+  fd_rect->real->samples[0] /= 2.0;
+  fd_rect->real->samples[fd_rect->real->size - 1] /= 2.0;
 
   // zero out the output signal to prepare for synthesis
   memset(s_out->samples, 0, s_out->size * sizeof(Sample));
+  // for (int i = 0; i < s_out->size; i++) {
+  //   printf("%lf\n", s_out->samples[i]);
+  // }
 
   // synthesize the frequency domain signals
   for (uint32_t i = 0; i < fd_rect->size; i++) {
     for (uint32_t j = 0; j < s_out->size; j++) {
-      s_out->samples[j] += fd_rect->real->samples[i] * cos(2 * M_PI * i * j / s_out->size);
-      s_out->samples[j] += fd_rect->img->samples[i] * sin(2 * M_PI * i * j / s_out->size);
+      s_out->samples[j] += fd_rect->real->samples[i] * cos(2 * M_PI * (double) i * (double) j / s_out->size);
+      s_out->samples[j] += fd_rect->img->samples[i] * sin(2 * M_PI * (double) i * (double) j / s_out->size);
     }
   }
+  // for (uint32_t k = 0; k < f)
+  // Signal *real1 = SigGen_Sinusoid(&cos, (double)k, fd.real->samples[k], 0, fd.size * 2 - 2, fd.size * 2 - 2);
 }
 
 void FD_Signal_Rect_To_Polar(FD_Signal_Rect *fd_rect, FD_Signal_Polar *fd_polar) {
@@ -109,14 +114,14 @@ void Unwrap_Phase(FD_Signal_Polar *fd_polar) {
 //  is converted to sine waves
 // returns an array of pointers to allocated signals for
 //  cos and sin through the output params
-void FD_RectToWaveform(FD_Signal_Rect *fd_rect, Signal **re_waves, Signal **im_waves) {
-  // allocate space for the output arrays
-  *re_waves = malloc(fd_rect->size * sizeof(Signal));
-  *im_waves = malloc(fd_rect->size * sizeof(Signal));
+// void FD_RectToWaveform(FD_Signal_Rect *fd_rect, Signal **re_waves, Signal **im_waves) {
+//   // allocate space for the output arrays
+//   *re_waves = malloc(fd_rect->size * sizeof(Signal));
+//   *im_waves = malloc(fd_rect->size * sizeof(Signal));
 
-  for (uint32_t i = 0; i < fd_rect->size; i++) {
-    // Signal *re_wave = Signal_Create(fd_rect->size * 2 - 2);
-    re_waves[i] = SigGen_Cos(fd_rect->size * 2 - 2, i, fd_rect->real->samples[i], 0, fd_rect->size);
-    im_waves[i] = SigGen_Sin(fd_rect->size * 2 - 2, i, fd_rect->real->samples[i], 0, fd_rect->size);
-  }
-}
+//   for (uint32_t i = 0; i < fd_rect->size; i++) {
+//     // Signal *re_wave = Signal_Create(fd_rect->size * 2 - 2);
+//     re_waves[i] = SigGen_Cos(fd_rect->size * 2 - 2, i, fd_rect->real->samples[i], 0, fd_rect->size);
+//     im_waves[i] = SigGen_Sin(fd_rect->size * 2 - 2, i, fd_rect->real->samples[i], 0, fd_rect->size);
+//   }
+// }

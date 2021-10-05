@@ -1,46 +1,32 @@
 #include "Signal.h"
+#include "SignalGenerator.h"
 #include <stdint.h>
+#include <stdio.h>
+#include <memory.h>
 
 #define _USE_MATH_DEFINES  // for math constants (like M_PI)
 #include <math.h>
 
-Signal* SigGen_Sin(uint32_t sf, uint32_t freq, uint32_t amp,
-                        uint32_t phase, uint32_t n) {
-  Sample t = 2.0 * M_PI * freq / sf;  // 
-  Sample s_cos = amp * cos(phase);  // sample from cosine
-  Sample s_sin = amp * sin(phase);  // sample from sine
-
-  Sample cs = cos(t);
-  Sample sn = sin(t);
-
+// sr: sample rate, fq: freqency of sin, ph: phase shift of sin, n: number of samples
+Signal* SigGen_Sinusoid(sinusoid_fn fn, double fq, double amp, double ph, uint32_t n, uint32_t sr) {
   Signal *s_out = Signal_Create(n);
 
-  for (uint32_t i = 1; i < n; i++) {
-    t = s_cos;
-    s_cos = cs * s_cos - sn * s_sin;
-    s_sin = sn * t + cs * s_sin;
-    s_out->samples[i] = s_sin;
+  for (uint32_t i = 0; i < n; i++) {
+    double theta = 2.0 * M_PI * fq * (double) i / (double) sr + ph;
+    s_out->samples[i] = amp * fn(theta);
   }
 
   return s_out;
 }
 
-Signal* SigGen_Cos(uint32_t sf, uint32_t freq, uint32_t amp,
-                        uint32_t phase, uint32_t n) {
-  Sample t = 2.0 * M_PI * freq / sf;  // 
-  Sample s_cos = amp * cos(phase);  // sample from cosine
-  Sample s_sin = amp * sin(phase);  // sample from sine
+Signal* SigGen_SinusoidSynth(size_t n_sigs, Signal **sigs) {
+  Signal *s_out = Signal_Create(sigs[0]->size);
+  memset(s_out->samples, 0, sigs[0]->size * sizeof(Sample));
 
-  Sample cs = cos(t);
-  Sample sn = sin(t);
-
-  Signal *s_out = Signal_Create(n);
-
-  for (uint32_t i = 1; i < n; i++) {
-    t = s_cos;
-    s_cos = cs * s_cos - sn * s_sin;
-    s_sin = sn * t + cs * s_sin;
-    s_out->samples[i] = s_cos;
+  for (uint32_t i = 0; i < n_sigs; i++) {
+    for (uint32_t j = 0; j < sigs[0]->size; j++) {
+      s_out->samples[j] += sigs[i]->samples[j];
+    }
   }
 
   return s_out;

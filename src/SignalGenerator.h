@@ -3,26 +3,21 @@
 
 #include "Signal.h"
 
-// returns a Signal containing samples taken at the given
-//  frequency from a sine wave with the given parameters
-// sf - sampling frequency
-// freq - sine frequency
-// amp - sine amplitude
-// phase - sine phase
-// n - number of samples
-Signal* SigGen_Sin(uint32_t sf, uint32_t freq, uint32_t amp,
-                        uint32_t phase, uint32_t n);
-
-Signal* SigGen_Cos(uint32_t sf, uint32_t freq, uint32_t amp,
-                        uint32_t phase, uint32_t n);
+typedef double (*sinusoid_fn) (double);
 
 // returns a Signal containing samples taken at the given
-//  frequency from a sine wave with the given parameters
-// sf - sampling frequency
-// freq - sine frequency
+//  frequency from the given sinusoid function wave with
+//  the given parameters.
+// fn - sinusoidal function to sample (sin or cos)
+// sr - sampling rate
+// fq - sine frequency
 // amp - sine amplitude
-// phase - sine phase
+// ph - sine phase
 // n - number of samples
-Signal* SigGen_SinSum();
+Signal* SigGen_Sinusoid(sinusoid_fn fn, double fq, double amp, double ph, uint32_t n, uint32_t sr);
+
+// returns a new signal that is the sum of each signal in the given array of the given size.
+//  all signals must be the same length
+Signal* SigGen_SinusoidSynth(size_t n_sigs, Signal **sigs);
 
 #endif // SIGNAL_GENERATOR_H_
