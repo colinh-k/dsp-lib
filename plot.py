@@ -28,7 +28,7 @@ def main():
     plt.title(filename)
     plt.xlabel('Sample Number')
     plt.ylabel('Amplitude')
-    plt.plot(y, t, c=plt_color)
+    # plt.plot(y, t, c=plt_color)
 
   plt.show()
   # test_dft()

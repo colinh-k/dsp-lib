@@ -15,6 +15,9 @@
 void TestDFT_Sinusoid(void);
 // does the same as TestDFT_Sinusoid, except with a square wave
 void TestDFT_Square(void);
+// writes each cos and sin wave from the given frequency 
+//  domain signal to files named "[1-9]+[real|imag].sig"
+void WriteFDWaves(FDSignal_Rect *fd, Signal *og);
 
 int main(int argc, char const *argv[]) {
   TestDFT_Sinusoid();
@@ -31,38 +34,10 @@ void TestDFT_Sinusoid(void) {
   Signal *sigs[3] = {sig1, sig2, sig3};
 
   Signal *sig = SigGen_SinusoidSynth(3, sigs);
-
-  // Signal *sig = SigGen_Sinusoid(&sin, 10, 1, 0, 330, 1000);
   File_WriteSignal(sig, "og_signal.sig");
 
   FDSignal_Rect *fd = DFT_Correlation(sig);
-
-  // Signal *s_build = Signal_Create(300);
-  // memset(s_build->samples, 0, s_build->size * sizeof(Sample));
-
-  // adjust the amplitudes in the frequency domain
-  for (uint32_t i = 0; i < fd->size; i++) {
-    fd->real->samples[i] /= (sig->size / 2.0);
-    fd->img->samples[i] /= - (sig->size / 2.0);
-  }
-
-  // correct the first and last real signal components
-  fd->real->samples[0] /= 2.0;
-  fd->real->samples[fd->real->size - 1] /= 2.0;
-
-  // generate samples from the real and imaginary components from
-  //  the dft signal and output them as cos and sin waves to .sig files
-  for (uint32_t i = 0; i < fd->size; i++) {
-    char name[16];
-
-    sprintf(name, "%dreal.sig", i);
-    Signal *real = SigGen_Sinusoid(&cos, (double) i, fd->real->samples[i], 0, fd->size * 2 - 2, fd->size * 2 - 2);
-    File_WriteSignal(real, name);
-
-    Signal *imag = SigGen_Sinusoid(&sin, (double) i, fd->img->samples[i], 0, fd->size * 2 - 2, fd->size * 2 - 2);
-    sprintf(name, "%dimag.sig", i);
-    File_WriteSignal(imag, name);
-  }
+  WriteFDWaves(fd, sig);
 
   Signal *sig_inv = DFT_Correlation_Inverse(fd);
   File_WriteSignal(sig_inv, "inverse_signal.sig");
@@ -72,7 +47,6 @@ void TestDFT_Sinusoid(void) {
   Signal_Free(sig2);
   Signal_Free(sig3);
   Signal_Free(sig_inv);
-  // Signal_Free(s_build);
   
   free(fd);
 }
@@ -81,12 +55,69 @@ void TestDFT_Square(void) {
   Signal *square = SigGen_Square(10, 1, 300, 1000);
   File_WriteSignal(square, "square.sig");
 
-  Signal *dft_square = DFT_Correlation(square);
+  FDSignal_Rect *fd_square = DFT_Correlation(square);
+  WriteFDWaves(fd_square, square);
 
+  Signal *inv_square = DFT_Correlation_Inverse(fd_square);
+  File_WriteSignal(inv_square, "square_inv.sig");
+
+  Signal_Free(square);
+  Signal_Free(inv_square);
+  free(fd_square);
 }
 
-// writes each cos and sin wave from the given frequency 
-//  domain signal to files named "[1-9]+[real|imag].sig"
-void WriteFDWaves(FDSignal_Rect *fd) {
+void WriteFDWaves(FDSignal_Rect *fd, Signal *og) {
+  size_t s_size = fd->size * 2 - 2;
 
+  Signal *build = Signal_Create(s_size);
+  memset(build->samples, 0, build->size * sizeof(Sample));
+
+  // copy the frequency domain signals
+  Signal *r_cpy = Signal_Create(fd->size);
+  Signal *i_cpy = Signal_Create(fd->size);
+  for (uint32_t i = 0; i < fd->size; i++) {
+    r_cpy->samples[i] = fd->real->samples[i];
+    i_cpy->samples[i] = fd->img->samples[i];
+  }
+
+  for (uint32_t i = 0; i < fd->size; i++) {
+    r_cpy->samples[i] /= (s_size / 2.0);
+    i_cpy->samples[i] /= - (s_size / 2.0);
+  }
+
+  // correct the first and last real signal components
+  r_cpy->samples[0] /= 2.0;
+  r_cpy->samples[r_cpy->size - 1] /= 2.0;
+
+  // Sample r_amp = fd->real->samples[i] / (s_size / 2.0);
+  // Sample i_amp = - fd->img->samples[i] / (s_size / 2.0);
+
+  // if (i == 0 || i == fd->real->size - 1) {
+  //   r_amp /= 2.0;
+  // }
+
+  // generate samples from the real and imaginary components from
+  //  the dft signal and output them as cos and sin waves to .sig files
+  for (uint32_t i = 0; i < fd->size; i++) {
+    char name[16];
+
+    sprintf(name, "%dreal.sig", i);
+    Signal *real = SigGen_Sinusoid(&cos, (double) i, r_cpy->samples[i], 0, fd->size * 2 - 2, fd->size * 2 - 2);
+    File_WriteSignal(real, name);
+
+    Signal *imag = SigGen_Sinusoid(&sin, (double) i, i_cpy->samples[i], 0, fd->size * 2 - 2, fd->size * 2 - 2);
+    sprintf(name, "%dimag.sig", i);
+    File_WriteSignal(imag, name);
+
+    Signal *sum = SigGen_SinusoidSynth(3, (Signal*[3]) {real, imag, build});
+    Signal_Free(build);
+    build = sum;
+
+    Signal_Free(real);
+    Signal_Free(imag);
+  }
+
+  for (uint32_t i = 0; i < build->size; i++) {
+    printf("%lf\t%lf\n", build->samples[i], og->samples[i]);
+  }
 }
