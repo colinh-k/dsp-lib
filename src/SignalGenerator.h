@@ -20,4 +20,6 @@ Signal* SigGen_Sinusoid(sinusoid_fn fn, double fq, double amp, double ph, uint32
 //  all signals must be the same length
 Signal* SigGen_SinusoidSynth(size_t n_sigs, Signal **sigs);
 
+Signal* SigGen_Square(double fq, double amp, uint32_t n, uint32_t sr);
+
 #endif // SIGNAL_GENERATOR_H_

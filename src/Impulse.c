@@ -5,6 +5,7 @@
 
 Signal* Impulse_Convolve(Signal *s_in, Signal *s_ir) {
   Signal *s_out = Signal_Create(s_in->size + s_ir->size - 1);
+  // aliases for the output, input, and impulse response signals
   Sample *out = s_out->samples;
   Sample *in = s_in->samples;
   Sample *ir = s_ir->samples;

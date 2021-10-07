@@ -1,8 +1,9 @@
 #ifndef IMPULSE_H_
 #define IMPULSE_H_
 
-#include "Signal.h"
 #include <memory.h>
+
+#include "Signal.h"
 
 // contains misc. utility functions for signal manipulation
 
