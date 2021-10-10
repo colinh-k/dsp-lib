@@ -19,9 +19,12 @@ void TestDFT_Square(void);
 //  domain signal to files named "[1-9]+[real|imag].sig"
 void WriteFDWaves(FDSignal_Rect *fd, Signal *og);
 
+void TestFFT(void);
+
 int main(int argc, char const *argv[]) {
-  TestDFT_Sinusoid();
+  // TestDFT_Sinusoid();
   // TestDFT_Square();
+  TestFFT();
 
   return EXIT_SUCCESS;
 }
@@ -120,4 +123,26 @@ void WriteFDWaves(FDSignal_Rect *fd, Signal *og) {
   for (uint32_t i = 0; i < build->size; i++) {
     printf("%lf\t%lf\n", build->samples[i], og->samples[i]);
   }
+}
+
+void TestFFT(void) {
+  Signal *sig1 = SigGen_Sinusoid(&sin, 10, 0.25, 0, 256, 1000);
+  Signal *sig2 = SigGen_Sinusoid(&sin, 5, 0.5, 0, 256, 1000);
+  Signal *sig3 = SigGen_Sinusoid(&sin, 15, 0.5, 0, 256, 1000);
+  Signal *sigs[3] = {sig1, sig2, sig3};
+
+  Signal *sig = SigGen_SinusoidSynth(3, sigs);
+  File_WriteSignal(sig, "og_signal.sig");
+
+  ComplexSignal *c_sig = Signal_ToComplexSignal(sig);
+  FFT(c_sig);
+  FFT_Inverse(c_sig);
+
+  File_WriteComplexSignal(c_sig, "fft_inverse");
+
+  Signal_Free(sig1);
+  Signal_Free(sig2);
+  Signal_Free(sig3);
+  Signal_Free(sig);
+  ComplexSignal_Free(c_sig);
 }

@@ -34,4 +34,8 @@ void FDSignal_PolarToRect(FD_Signal_Polar *fd_polar, FDSignal_Rect *fd_rect);
 
 // void FDSignal_RectToWaveform(FDSignal_Rect *fd_rect, Signal **re_waves, Signal **im_waves, uint32_t n_waves);
 
+void FFT(ComplexSignal *sig);
+
+void FFT_Inverse(ComplexSignal *sig);
+
 #endif  // FOURIER_H_

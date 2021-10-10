@@ -135,3 +135,94 @@ void FDSignal_PolarToRect(FD_Signal_Polar *fd_polar, FDSignal_Rect *fd_rect) {
 //     im_waves[i] = SigGen_Sinusoid(&sin, (double) i, fd_rect->img->samples[i], 0, fd_rect->size * 2 - 2, fd_rect->size * 2 - 2);
 //   }
 // }
+
+// for efficiency, this function modifies the signal 'in place'.
+//  upon return, the signal contains the real and imaginary
+//  components of the original signal's frequency domain 
+void FFT(ComplexSignal *sig) {
+  // constants / aliases
+  Sample *real = sig->real;
+  Sample *imag = sig->imag;
+  size_t n = sig->size;
+  size_t n_m1 = n - 1;
+  size_t n_d2 = n / 2;
+  uint32_t n_stages = log(n) / log(2);
+  int32_t p = n_d2;
+
+  // Time Domain Decomposition Phase:
+  // algorithm for re-arranging the samples via 'bit reversing'.
+  for (uint32_t i = 1; i <= n - 2; i++) {
+    if (i < p) {
+      // swap real and imag samples
+      Sample r_tmp = real[p];
+      Sample i_tmp = imag[p];
+
+      real[p] = real[i];
+      imag[p] = imag[i];
+
+      real[i] = r_tmp;
+      imag[i] = i_tmp;
+    }
+
+    int32_t k = n_d2;
+
+    while (k <= p) {
+      p = p - k;
+      k = k / 2;
+    }
+
+    p += k;
+  }
+
+  // Frequency Domain Synthesis Phase:
+  // iterate for each stage to reconstruct the frequency domain signal
+  for (uint32_t i = 1; i <= n_stages; i++) {
+    // number of samples in current stage
+    uint32_t n_in_stage = pow(2, i);
+    uint32_t n_in_stage_d2 = n_in_stage / 2;
+
+    double u_r = 1;
+    double u_i = 0;
+
+    Sample s_r = cos(M_PI / n_in_stage_d2);
+    Sample s_i = - sin(M_PI / n_in_stage_d2);
+
+    for (uint32_t j = 1; j <= n_in_stage_d2; j++) {
+      uint32_t j_m1 = j - 1;
+      for (uint32_t k = j_m1; k <= n_m1; k += n_in_stage) {
+        uint32_t idx = k + n_in_stage_d2;
+
+        // butterfly calculation:
+        Sample r_tmp = real[idx] * u_r - imag[idx] * u_i;
+        Sample i_tmp = real[idx] * u_i - imag[idx] * u_r;
+
+        real[idx] = real[k] - r_tmp;
+        imag[idx] = imag[k] - i_tmp;
+        real[k] = real[k] + r_tmp;
+        imag[k] = imag[k] + i_tmp;
+      }
+
+      Sample r_tmp = u_r;
+      u_r = r_tmp * s_r - u_i * s_i;
+      u_i = r_tmp * s_i + u_i * s_r;
+    }
+  }
+}
+
+void FFT_Inverse(ComplexSignal *sig) {
+  // aliases
+  size_t n = sig->size;
+  Sample *real = sig->real;
+  Sample *imag = sig->imag;
+
+  for (uint32_t i = 0; i < sig->size; i++) {
+    imag[i] = - imag[i];
+  }
+
+  FFT(sig);
+
+  for (uint32_t i = 0; i < sig->size; i++) {
+    real[i] = real[i] / ((Sample) n);
+    imag[i] = -imag[i] / ((Sample) n);
+  }
+}

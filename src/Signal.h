@@ -15,6 +15,13 @@ typedef struct {
   Sample *samples;  // the array of samples defining the signal
 } Signal;
 
+// a signal composed of complex numbers
+typedef struct {
+  size_t size;  // both real and imag are the same size
+  Sample *real;  // real part of the signal
+  Sample *imag;  // imaginary part of the signal
+} ComplexSignal;
+
 // allocates space for a signal of the given size and initializes its
 //  size field. returns NULL on failure, or a pointer to the allocated
 //  signal struct otherwise
@@ -29,5 +36,12 @@ int8_t Signal_Load(Signal *signal, char *filename);
 // free the allocated signal. 'signal' is not longer a valid
 //  pointer when this function returns.
 void Signal_Free(Signal *signal);
+
+ComplexSignal* ComplexSignal_Create(size_t s_size);
+void ComplexSignal_Free(ComplexSignal *signal);
+
+// returns a complex signal composed of the real samples
+//  in the given signal and all complex values equal to 0.
+ComplexSignal* Signal_ToComplexSignal(Signal *signal);
 
 #endif  // SIGNAL_H_
