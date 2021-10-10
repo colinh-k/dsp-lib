@@ -57,10 +57,14 @@ void ComplexSignal_Free(ComplexSignal *signal) {
 // returns a complex signal composed of the real samples
 //  in the given signal and all complex values equal to 0.
 ComplexSignal* Signal_ToComplexSignal(Signal *signal) {
+  printf("new signal\n");
   ComplexSignal *c_sig = ComplexSignal_Create(signal->size);
 
   // copy over the real part of the signal
-  memcpy(c_sig->real, signal->samples, signal->size);
+  memcpy(c_sig->real, signal->samples, signal->size * sizeof(Sample));
+  for (int i = 0; i < signal->size; i++) {
+    printf("cpy: %lf\tog: %lf\n", c_sig->real[i], signal->samples[i]);
+  }
   // initialize the imaginary part to all 0's
   memset(c_sig->imag, 0, c_sig->size * sizeof(Sample));
 

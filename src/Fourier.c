@@ -146,7 +146,7 @@ void FFT(ComplexSignal *sig) {
   size_t n = sig->size;
   size_t n_m1 = n - 1;
   size_t n_d2 = n / 2;
-  uint32_t n_stages = log(n) / log(2);
+  int32_t n_stages = log(n) / log(2);
   int32_t p = n_d2;
 
   // Time Domain Decomposition Phase:
@@ -184,8 +184,8 @@ void FFT(ComplexSignal *sig) {
     double u_r = 1;
     double u_i = 0;
 
-    Sample s_r = cos(M_PI / n_in_stage_d2);
-    Sample s_i = - sin(M_PI / n_in_stage_d2);
+    Sample s_r = cos(M_PI / ((double) n_in_stage_d2));
+    Sample s_i = - sin(M_PI / ((double) n_in_stage_d2));
 
     for (uint32_t j = 1; j <= n_in_stage_d2; j++) {
       uint32_t j_m1 = j - 1;
@@ -194,7 +194,7 @@ void FFT(ComplexSignal *sig) {
 
         // butterfly calculation:
         Sample r_tmp = real[idx] * u_r - imag[idx] * u_i;
-        Sample i_tmp = real[idx] * u_i - imag[idx] * u_r;
+        Sample i_tmp = real[idx] * u_i + imag[idx] * u_r;
 
         real[idx] = real[k] - r_tmp;
         imag[idx] = imag[k] - i_tmp;

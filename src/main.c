@@ -132,9 +132,11 @@ void TestFFT(void) {
   Signal *sigs[3] = {sig1, sig2, sig3};
 
   Signal *sig = SigGen_SinusoidSynth(3, sigs);
-  File_WriteSignal(sig, "og_signal.sig");
+  File_WriteSignal(sig, "og_signal_reg.sig");
 
   ComplexSignal *c_sig = Signal_ToComplexSignal(sig);
+  File_WriteComplexSignal(c_sig, "og_signal_complex");
+
   FFT(c_sig);
   FFT_Inverse(c_sig);
 
